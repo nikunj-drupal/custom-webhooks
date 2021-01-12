@@ -1,0 +1,12 @@
+entity.webhook_config.collection:
+  title: 'Webhooks'
+  route_name: entity.webhook_config.collection
+  description: 'Add and configure outgoing and incoming webhooks.'
+  parent: system.admin_config_services
+  weight: 99
+view.coupon_promotion.page_1:
+  title: 'Coupon Views'
+  route_name: view.coupon_promotion.page_1
+  description: 'Coupon Listing Views.'
+  parent: system.admin_config_services
+  weight: 99

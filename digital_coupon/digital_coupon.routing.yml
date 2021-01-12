@@ -1,0 +1,15 @@
+webhooks.webhook_toggle_active:
+  path: '/admin/config/services/webhook/{id}/toggle_active'
+  defaults:
+    _controller: '\Drupal\digital_coupon\Controller\WebhookController::toggleActive'
+  requirements:
+    _csrf_token: 'TRUE'
+    _permission: 'administer webhooks'
+
+webhooks.admin_settings:
+  path: '/admin/config/services/webhook/settings'
+  defaults:
+    _title: 'Settings'
+    _form: 'Drupal\digital_coupon\Form\SettingsForm'
+  requirements:
+    _permission: 'administer webhooks'

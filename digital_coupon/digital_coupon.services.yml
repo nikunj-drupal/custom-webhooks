@@ -1,0 +1,21 @@
+services:
+  webhooks.service:
+    class: Drupal\digital_coupon\WebhooksService
+    arguments: ['@http_client', '@logger.factory', '@request_stack', '@event_dispatcher', '@entity_type.manager', '@serializer', '@uuid', '@config.factory']
+  digital_coupon.normalizer.coupon_promotion:
+      class: Drupal\digital_coupon\Normalizer\CouponPromotion
+      arguments: ['@entity.manager']
+      tags:
+        - { name: normalizer, priority: 1 }
+  digital_coupon.normalizer.coupon_pool:
+      class: Drupal\digital_coupon\Normalizer\CouponPool
+      arguments: ['@entity.manager']
+      tags:
+        - { name: normalizer, priority: 1 }
+  digital_coupon.normalizer.coupon_list:
+      class: Drupal\digital_coupon\Normalizer\CouponList
+      arguments: ['@entity.manager']
+      tags:
+        - { name: normalizer, priority: 1 }
+  coupon.service:
+    class: Drupal\digital_coupon\CouponService

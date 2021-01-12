@@ -1,0 +1,8 @@
+name: Digital Coupon
+type: module
+description: A custom module that holds all custom code/logic related to the new digital coupon workflow system.
+core_version_requirement: ^8 || ^9
+package: Digital Coupon
+dependencies:
+  - serialization
+configure: entity.webhook_config.collection

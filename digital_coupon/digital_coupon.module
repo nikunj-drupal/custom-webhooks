@@ -1,0 +1,253 @@
+<?php
+
+/**
+ * @file
+ * Contains digital_coupon.module.
+ */
+
+use Drupal\Core\Entity\EntityInterface;
+use Drupal\Core\Entity\Display\EntityViewDisplayInterface;
+use Drupal\Core\Routing\RouteMatchInterface;
+use Drupal\user\Entity\User;
+use Drupal\digital_coupon\Webhook;
+use Drupal\digital_coupon\CouponNormalizer;
+use Drupal\node\Entity\NodeType;
+use Drupal\node\Entity\Node;
+
+/**
+ * Implements hook_help().
+ */
+function digital_coupon_help($route_name, RouteMatchInterface $route_match) {
+  switch ($route_name) {
+    case 'help.page.webhooks':
+      $output = '';
+      $output .= '<h3>' . t('Digital Coupon') . '</h3>';
+      $output .= '<p>' . t('A custom module that holds all custom code/logic related to the new digital coupon workflow system.') . '</p>';
+      return $output;
+
+    default:
+  }
+}
+
+/**
+ * Implements hook_entity_insert().
+ */
+function digital_coupon_entity_insert(EntityInterface $entity) {
+  /** @var \Drupal\digital_coupon\WebhooksService $webhooks_service */
+  $webhooks_service = \Drupal::service('webhooks.service');
+  /** @var \Symfony\Component\Serializer\Serializer $serializer */
+  $serializer = \Drupal::service('serializer');
+  $event = implode(':', ['entity', $entity->getEntityType()->id(), 'create']);
+  $user = User::load(\Drupal::currentUser()->id());
+  if ($entity->getEntityType()->id() == 'node') {
+    $node_type = $entity->bundle();
+    $webhook_configs = $webhooks_service->loadMultipleByEvent($event, $node_type, 'create');
+    $coupons = ['coupon_pool', 'coupon_list', 'coupon_promotion', 'coupon_type'];
+    /** @var \Drupal\digital_coupon\Entity\WebhookConfig $webhook_config */
+    foreach ($webhook_configs as $webhook_config) {
+      $node_event = $webhook_config->getNodeEvent();
+      if (in_array($node_type, $coupons)) {
+        if (in_array('create', $node_event, TRUE)) {
+          $webhook = new Webhook(
+            [
+              'event' => $event,
+              'user' => $serializer->normalize($user),
+              'entity' => $serializer->normalize($entity),
+            ],
+            [],
+            $event,
+            $webhook_config->getContentType()
+          );
+          $getData = new CouponNormalizer($webhook_config, $entity);
+          if ($webhook_config->getNodeType() == 'coupon_pool') {
+            $webhookData = $getData->getCouponPool();
+            $webhookBody = json_encode($webhookData);
+          }
+          if ($webhook_config->getNodeType() == 'coupon_list') {
+            $webhookData = $getData->getCouponList();
+            $webhookBody = json_encode($webhookData);
+          }
+          if ($webhook_config->getNodeType() == 'coupon_promotion') {
+            $webhookData = $getData->getCouponPromotion();
+            $webhookBody = json_encode($webhookData);
+          }
+          if ($webhook_config->getNodeType() == 'coupon_type') {
+            $webhookData = $getData->getCouponType();
+            $webhookBody = json_encode($webhookData);
+          }
+          $webhooks_service->send($webhook_config, $webhook, $webhookBody);
+        }
+      }
+    }
+  }
+}
+
+/**
+ * Implements hook_entity_update().
+ */
+function digital_coupon_entity_update(EntityInterface $entity) {
+  /** @var \Drupal\digital_coupon\WebhooksService $webhooks_service */
+  $webhooks_service = \Drupal::service('webhooks.service');
+  /** @var \Symfony\Component\Serializer\Serializer $serializer */
+  $serializer = \Drupal::service('serializer');
+
+  $event = implode(':', ['entity', $entity->getEntityType()->id(), 'update']);
+  $user = User::load(\Drupal::currentUser()->id());
+
+  if ($entity->getEntityType()->id() == 'node') {
+    $node_type = $entity->bundle();
+    $webhook_configs = $webhooks_service->loadMultipleByEvent($event, $node_type, 'update');
+    $coupons = ['coupon_pool', 'coupon_list', 'coupon_promotion', 'coupon_type'];
+    /** @var \Drupal\digital_coupon\Entity\WebhookConfig $webhook_config */
+    foreach ($webhook_configs as $webhook_config) {
+      $node_event = $webhook_config->getNodeEvent();
+      if (in_array($node_type, $coupons)) {
+        if (in_array('update', $node_event, TRUE)) {
+          $webhook = new Webhook(
+            [
+              'event' => $event,
+              'user' => $serializer->normalize($user),
+              'entity' => $serializer->normalize($entity),
+            ],
+            [],
+            $event,
+            $webhook_config->getContentType()
+          );
+          $getData = new CouponNormalizer($webhook_config, $entity);
+          if ($webhook_config->getNodeType() == 'coupon_pool') {
+            $webhookData = $getData->getCouponPool();
+            $webhookBody = json_encode($webhookData);
+          }
+          if ($webhook_config->getNodeType() == 'coupon_list') {
+            $webhookData = $getData->getCouponList();
+            $webhookBody = json_encode($webhookData);
+          }
+          if ($webhook_config->getNodeType() == 'coupon_promotion') {
+            $webhookData = $getData->getCouponPromotion();
+            $webhookBody = json_encode($webhookData);
+          }
+          if ($webhook_config->getNodeType() == 'coupon_type') {
+            $webhookData = $getData->getCouponType();
+            $webhookBody = json_encode($webhookData);
+          }
+          $webhooks_service->send($webhook_config, $webhook, $webhookBody);
+        }
+      }
+    }
+  }
+}
+
+/**
+ * Implements hook_entity_delete().
+ */
+function digital_coupon_entity_delete(EntityInterface $entity) {
+  /** @var \Drupal\digital_coupon\WebhooksService $webhooks_service */
+  $webhooks_service = \Drupal::service('webhooks.service');
+  /** @var \Symfony\Component\Serializer\Serializer $serializer */
+  $serializer = \Drupal::service('serializer');
+  $event = implode(':', ['entity', $entity->getEntityType()->id(), 'delete']);
+  $user = User::load(\Drupal::currentUser()->id());
+  if ($entity->getEntityType()->id() == 'node') {
+    $node_type = $entity->bundle();
+    $webhook_configs = $webhooks_service->loadMultipleByEvent($event, $node_type, 'delete');
+    $coupons = ['coupon_pool', 'coupon_list', 'coupon_promotion', 'coupon_type'];
+    /** @var \Drupal\digital_coupon\Entity\WebhookConfig $webhook_config */
+    foreach ($webhook_configs as $webhook_config) {
+      if (in_array($node_type, $coupons)) {
+        if (in_array('delete', $node_event, TRUE)) {
+          $webhook = new Webhook(
+            [
+              'event' => $event,
+              'user' => $serializer->normalize($user),
+              'entity' => $serializer->normalize($entity),
+            ],
+            [],
+            $event,
+            $webhook_config->getContentType()
+          );
+          $getData = new CouponNormalizer($webhook_config, $entity);
+          if ($webhook_config->getNodeType() == 'coupon_pool') {
+            $webhookData = $getData->getCouponPool();
+            $webhookBody = json_encode($webhookData);
+          }
+          if ($webhook_config->getNodeType() == 'coupon_list') {
+            $webhookData = $getData->getCouponList();
+            $webhookBody = json_encode($webhookData);
+          }
+          if ($webhook_config->getNodeType() == 'coupon_promotion') {
+            $webhookData = $getData->getCouponPromotion();
+            $webhookBody = json_encode($webhookData);
+          }
+          if ($webhook_config->getNodeType() == 'coupon_type') {
+            $webhookData = $getData->getCouponType();
+            $webhookBody = json_encode($webhookData);
+          }
+          $webhooks_service->send($webhook_config, $webhook, $webhookBody);
+        }
+      }
+    }
+  }
+
+  // Delete refrenced nodes coupon pool and coupon list.
+  if ($entity->getEntityType()->id() == 'node') {
+    $node_type = $entity->bundle();
+    if ($node_type == 'coupon_promotion') {
+      $coupon_pool = $entity->get('field_coupon_pool')->getString();
+      if ($coupon_pool) {
+        $node_coupon_pool = Node::load($coupon_pool);
+        $coupon_list = $node_coupon_pool->get('field_coupon_list')->getString();
+        if ($coupon_list) {
+          $node_coupon_list = Node::load($coupon_list);
+          $node_coupon_list->delete();
+        }
+        $node_coupon_pool->delete();
+      }
+    }
+  }
+}
+
+/**
+ * Implements hook_entity_extra_field_info().
+ */
+function digital_coupon_entity_extra_field_info() {
+  $extra = [];
+
+  foreach (NodeType::loadMultiple() as $bundle) {
+    $extra['node']['coupon_promotion']['display']['claimed'] = [
+      'label' => t('Claimed'),
+      'description' => t('Claimed Coupons'),
+      'weight' => 100,
+      'visible' => TRUE,
+    ];
+    $extra['node']['coupon_promotion']['display']['unclaimed'] = [
+      'label' => t('Unclaimed'),
+      'description' => t('Unclaimed Coupons'),
+      'weight' => 100,
+      'visible' => TRUE,
+    ];
+  }
+
+  return $extra;
+}
+
+/**
+ * Implements hook_ENTITY_TYPE_view().
+ */
+function digital_coupon_node_view(array &$build, EntityInterface $entity, EntityViewDisplayInterface $display) {
+  /** @var \Drupal\digital_coupon\CouponService $coupon_service */
+  $coupon_service = \Drupal::service('coupon.service');
+  $unclaimed = $coupon_service->getUnClaimed($entity);
+  $claimed = $coupon_service->getClaimed($entity);
+  if ($display->getComponent('claimed')) {
+    $build['claimed'] = [
+      '#type' => 'markup',
+      '#markup' => 'Claimed Coupons - ' . $claimed,
+    ];
+  }
+  if ($display->getComponent('unclaimed')) {
+    $build['unclaimed'] = [
+      '#type' => 'markup',
+      '#markup' => 'Unclaimed Coupons - ' . $unclaimed,
+    ];
+  }
+}
